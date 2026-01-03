@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseRedirect
+from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.urls import reverse
 
 monthly_challenges = {
@@ -14,19 +14,15 @@ monthly_challenges = {
     "september": "Learn a new language!",
     "october": "Go hiking every weekend!",
     "november": "Volunteer for a local charity!",
-    "december": "Reflect on the year and set goals for the next!"
+    "december": None
 }
 
 def index(request):
-    list_items = ""
     months = list(monthly_challenges.keys())
     
-    for month in months:
-        redirect_path = reverse("month-name", args=[month])
-        list_items += f"<li style=\"margin-bottom:10px\"><a href={redirect_path}>{month.capitalize()}</a></li>"
-    
-    response = f"<ul>{list_items}</ul>"
-    return HttpResponse(response)
+    return render(request, "challenges/index.html", {
+        "months": months
+    })
 
 def monthly_challenge_by_num(request, month):
     if(month < 1 or month > 12):
@@ -38,9 +34,12 @@ def monthly_challenge_by_num(request, month):
     return HttpResponseRedirect(redirect_path)
 
 def monthly_challenge(request, month):
-    text = monthly_challenges[month]
+    try:
+        text = monthly_challenges[month]
+        return render(request, "challenges/challenge.html", {
+            "month": month,
+            "text": text
+        })
+    except:
+        raise Http404()
     
-    if text is None:
-        return HttpResponseNotFound("This month is not supported")
-    
-    return HttpResponse(text)
